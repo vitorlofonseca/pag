@@ -1,4 +1,4 @@
-# PAG (Protocolo em Algoritmo Genético)
+# ProDeAlgG (Protocolo de Decisão do melhor caminho em Algoritmo Genético) 
 
 Este programa tem por objetivo decidir a melhor rota entre um host origem e um host destino através de um algoritmo genético.
 
