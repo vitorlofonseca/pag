@@ -1,17 +1,18 @@
-# ProDAlgG (Protocolo de Decisão do melhor caminho em Algoritmo Genético) 
+# Prodalg
 
-Este programa tem por objetivo decidir a melhor rota entre um host origem e um host destino através de um algoritmo genético.
+This software has as objective to decide the best route between a source host and a destination host, through Genetic Algorithm, considering the overload in each network link.
 
-1 - Situação atual:
- - O algoritmo trabalha com lista encadeada.
- - Os endereços de cada roteador e seus respectivos tempos de transferência de pacote até o próximo roteador, são aleatórios.
- - Neste programa, está sendo usado Elitismo em vez de mutação (que consiste em pegar o roteador com o melhor tempo da penúltima rota e clonar na última rota)
- - O ELITISMO SÓ ESTÁ SENDO REALIZADO NA ULTIMA ROTA
+1 - Actual Situation
+ - The algorithm works with linked list
+ - The address of each router is random. 
+ - The router X transfer times to next routers are random
+ - This algorithm is using elitism, instead mutation
+ - The elitism is only being used in the last route
  
-2 - Metas:
- - Implantar o protocolo ICMP para trabalhar com rotas reais e suas possibilidades
- - Implementar um protocolo (PAG) de reservar recurso, para transferência de grandes arquivos pela melhor rota (decidida pelo algoritmo genético).
+2 - Next Goals
+ - Develop integration with ICMP protocol, to work with real routes and your latency possibilities
+ - Develop integration with PAG protocol (network resource allocation), to big files transference in best route (decided by Genetic Algorithm)
  
-3 - Suposições para dar sentido ao algoritmo atual: 
- - Todos os n roteadores tem enlaces com os outros n-1 roteadores.
- - A quantidade de rotas (população inicial) sempre deve ser par
+3 - Considerations that give sense to atual algorithm
+ - All of N routers have links with the N-1 other routers  
+ - The routers quantity should initially be pair
