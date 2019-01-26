@@ -1,6 +1,6 @@
 # Prodalg
 
-This software has as objective to decide the best route between a source host and a destination host, through Genetic Algorithm, considering the overload in each network link.
+This project has as objective to decide the best route between a source host and a destination host, through Genetic Algorithm, considering the overload in each network link.
 
 1 - Actual Situation
  - The algorithm works with linked list
