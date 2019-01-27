@@ -9,7 +9,7 @@ This project has as objective to decide the best route between a source host and
 2 - Run the algorithm
 
 3 - In the image below, we can see many informations, like the route number, the router hop, the hop latency, and the total latency from source router to destination router (both defined in dataStructureManipulation.sourceHost and dataStructureManipulation.destinationHost)
-![screenshot_1](https://user-images.githubusercontent.com/16262664/51794839-b7f1e980-21c1-11e9-9820-0f6414503b85.png)
+![screenshot_1](https://user-images.githubusercontent.com/16262664/51800568-18137a80-2218-11e9-88ca-c7f5d3946bfe.png)
 
 4 - The faster route between all, will be used in real scenario
 
