@@ -21,178 +21,178 @@
 #include <time.h>
 #include <unistd.h>
 
-#define faixaIP 50							//192.168.1.faixaIP
-#define tamanhoIP 15
+#define IPRange 50							//192.168.1.IPRange
+#define IPSize 15
 #define timeout 500
-#define qtdRotas 8
-#define hostDestino "192.168.1.100"
-#define hostOrigem "192.168.1.1"
-#define qtdSelecao 4
-#define ultimoOcDestino 100
-#define ultimoOcOrigem 1
+#define routeQtd 8
+#define destinationHost "192.168.1.100"
+#define sourceHost "192.168.1.1"
+#define selectionQtd 4
+#define lastDestinationOc 100
+#define lastSourceOc 1
 
-typedef struct roteador{
-	char ip [tamanhoIP];
-	struct roteador *proxRtd;
-	int tempoProx;
-	char ultimoOcBin [9];
+typedef struct router{
+	char ip [IPSize];
+	struct router *nextRtd;
+	int nextTime;
+	char lastBinOc [9];
 	double fitness;
-}roteador;
+}router;
 
-typedef struct rota{
-	roteador *primeiroRoteador;
-	int tempoRota;
-	double somaFitness;
-}rota;
+typedef struct route{
+	router *firstRouter;
+	int routeTime;
+	double fitnessSum;
+}route;
 
 /* ---------------------------------- LIST MANIPULATION ------------------------------------*/
 
-void removerRepetidos (rota *caminho[]){
+void removeRepeated (route *way[]){
 	int i;
-	for (i=0 ; i<qtdRotas ; i++){
-		roteador *varredor = caminho[i]->primeiroRoteador->proxRtd;
-		roteador *comparador = varredor->proxRtd;
-		while (varredor->proxRtd != NULL){
-			while (comparador->proxRtd != NULL){
-				if (strcmp (comparador->ip, varredor->ip) == 0){
-					roteador *removedor = caminho[i]->primeiroRoteador->proxRtd;
-					while (removedor->proxRtd != comparador){
-						removedor = removedor->proxRtd;
+	for (i=0 ; i<routeQtd ; i++){
+		router *iterator = way[i]->firstRouter->nextRtd;
+		router *comparator = iterator->nextRtd;
+		while (iterator->nextRtd != NULL){
+			while (comparator->nextRtd != NULL){
+				if (strcmp (comparator->ip, iterator->ip) == 0){
+					router *remover = way[i]->firstRouter->nextRtd;
+					while (remover->nextRtd != comparator){
+						remover = remover->nextRtd;
 					}
-					removedor->proxRtd = comparador->proxRtd;
-					free (comparador);
+					remover->nextRtd = comparator->nextRtd;
+					free (comparator);
 				}
-				comparador = comparador->proxRtd;
+				comparator = comparator->nextRtd;
 			}
-			varredor = varredor->proxRtd;
-			comparador = varredor->proxRtd;
+			iterator = iterator->nextRtd;
+			comparator = iterator->nextRtd;
 		}	
 	}
 }
 
-roteador* criarRoteador (char ip [], int ultimoOcInt){
-	roteador *no = (roteador*)malloc(sizeof(roteador));
+router* createRouter (char ip [], int lastIntOc){
+	router *no = (router*)malloc(sizeof(router));
 	
-	char ultimoOcChar [9];
-	itoa (ultimoOcInt, ultimoOcChar, 2);
+	char lastCharOc [9];
+	itoa (lastIntOc, lastCharOc, 2);
 	
 	strcpy (no->ip, ip);								
-	no->proxRtd = NULL;	
+	no->nextRtd = NULL;	
 	no->fitness = 0.0;								
-	no->tempoProx = rand() % timeout + 20;				
-	strcpy (no->ultimoOcBin, ultimoOcChar);
+	no->nextTime = rand() % timeout + 20;				
+	strcpy (no->lastBinOc, lastCharOc);
 	return no;
 }
 
-rota* inicializaRota (){
-	rota *caminho = (rota*)malloc(sizeof(rota));			//allocating space in memory to linked list
-	roteador *rtd = criarRoteador(hostOrigem, ultimoOcOrigem);				//creating the first router with the origin-IP
-	caminho->primeiroRoteador = rtd;						
-	caminho->tempoRota = 0;									//route time initialized
-	caminho->somaFitness = 0.0;
-	return caminho;											//first router return
+route* initializeRoute (){
+	route *way = (route*)malloc(sizeof(route));			//allocating space in memory to linked list
+	router *rtd = createRouter(sourceHost, lastSourceOc);				//creating the first router with the origin-IP
+	way->firstRouter = rtd;						
+	way->routeTime = 0;									//route time initialized
+	way->fitnessSum = 0.0;
+	return way;											//first router return
 }
 
-void adicionarRoteador (rota *caminho, char ip [], int ultimoOcInt){
-	roteador *varredor = caminho->primeiroRoteador;
-	roteador *aux = criarRoteador(ip, ultimoOcInt);
+void addRouter (route *way, char ip [], int lastIntOc){
+	router *iterator = way->firstRouter;
+	router *aux = createRouter(ip, lastIntOc);
 	
-	while (varredor->proxRtd != NULL){
-		varredor = varredor->proxRtd;
+	while (iterator->nextRtd != NULL){
+		iterator = iterator->nextRtd;
 	}
-	varredor->proxRtd = aux;
+	iterator->nextRtd = aux;
 }
 
-int detectarRepetidos (rota *caminho, char ip[]){
+int detectRepeated (route *way, char ip[]){
 	
-	roteador *varredor = caminho->primeiroRoteador;
-	while (varredor->proxRtd != NULL){
-		if (strcmp (varredor->ip, ip) == 0){
+	router *iterator = way->firstRouter;
+	while (iterator->nextRtd != NULL){
+		if (strcmp (iterator->ip, ip) == 0){
 			return 0;
 		}
-		varredor = varredor->proxRtd;
+		iterator = iterator->nextRtd;
 	}
-	if (strcmp (varredor->ip, ip) == 0){
+	if (strcmp (iterator->ip, ip) == 0){
 			return 0;
 	}
 	return -1;
 }
 
 
-rota* montarRota (){
-	rota *caminho = inicializaRota();						//initialize the route
+route* mountRoute (){
+	route *way = initializeRoute();						//initialize the route
 	
 	int i=0;
 	/* Randomize the routers between the source and the destination */
-	for (i=0 ; i<rand() % faixaIP + 3 ; i++){		
-		char ultimoOc[3];					
-		int ultimoOcInt = rand() % faixaIP + 3;				
-		sprintf(ultimoOc, "%d", ultimoOcInt);
-		char ip[tamanhoIP];
+	for (i=0 ; i<rand() % IPRange + 3 ; i++){		
+		char lastOc[3];					
+		int lastIntOc = rand() % IPRange + 3;				
+		sprintf(lastOc, "%d", lastIntOc);
+		char ip[IPSize];
 		strcpy (ip, "192.168.1.");
-		strcat (ip, ultimoOc);
+		strcat (ip, lastOc);
 		
-		if (detectarRepetidos (caminho, ip) == -1){ 					//If already exist a router with the same IP, doesn't insert
-			adicionarRoteador (caminho, ip, ultimoOcInt); 
+		if (detectRepeated (way, ip) == -1){ 					//If already exist a router with the same IP, doesn't insert
+			addRouter (way, ip, lastIntOc); 
 		}
 			
 	}
 	
 	/* Localizing the last random router, and linking the efective destination in the end route */
-	roteador *aux = caminho->primeiroRoteador;					
+	router *aux = way->firstRouter;					
 	
-	while (aux->proxRtd != NULL){ 
-		aux = aux->proxRtd;
+	while (aux->nextRtd != NULL){ 
+		aux = aux->nextRtd;
 	}
 	
-	if (aux->proxRtd == NULL){
-			roteador *ultimo = criarRoteador (hostDestino, ultimoOcDestino);
-			ultimo->tempoProx = -1;
-			aux->proxRtd = ultimo;
+	if (aux->nextRtd == NULL){
+			router *last = createRouter (destinationHost, lastDestinationOc);
+			last->nextTime = -1;
+			aux->nextRtd = last;
 		}
 		
-	aux = caminho->primeiroRoteador;							 	   //
+	aux = way->firstRouter;							 	   //
 																		//
-	while (aux->tempoProx != -1){                                        //	Calc of route total time
-		caminho->tempoRota = caminho->tempoRota + aux->tempoProx; 		  //
-		aux = aux->proxRtd;												//		
+	while (aux->nextTime != -1){                                        //	Calc of route total time
+		way->routeTime = way->routeTime + aux->nextTime; 		  //
+		aux = aux->nextRtd;												//		
 	} 																  // 
 	
-	return caminho;
+	return way;
 }
 
-rota* inicializa (){
-	rota *caminho;
-	caminho = montarRota();
-	return caminho;
+route* initialize (){
+	route *way;
+	way = mountRoute();
+	return way;
 }
 
-void impressao (rota *caminho[]){
+void show (route *way[]){
 	
 	int i=0;
-	for (i=0 ; i<qtdRotas ; i++){
+	for (i=0 ; i<routeQtd ; i++){
 		printf ("Route %d\n\n", i+1);
 	
-		roteador *aux = caminho[i]->primeiroRoteador;
+		router *aux = way[i]->firstRouter;
 	
 		while (aux != NULL){
-			printf ("IP: %s - Time to next router: %dms - Last octet binary: %s - Fitness Jump: %f\n", aux->ip, aux->tempoProx, aux->ultimoOcBin, aux->fitness);
-			aux = aux->proxRtd;
+			printf ("IP: %s - Time to next router: %dms - Last octet binary: %s - Fitness Jump: %f\n", aux->ip, aux->nextTime, aux->lastBinOc, aux->fitness);
+			aux = aux->nextRtd;
 		}
-		printf ("Total Time: %dms\n", caminho[i]->tempoRota);
-		printf ("Route Fitness: %f\n", caminho[i]->somaFitness);
+		printf ("Total Time: %dms\n", way[i]->routeTime);
+		printf ("Route Fitness: %f\n", way[i]->fitnessSum);
 		printf ("\n\n");
 	}
 }
 
-void atualizarTemposTotais (rota *caminho[]){
+void updateTotalLatencies (route *way[]){
 	int i;
-	for (i=0 ; i<qtdRotas ; i++){
-		roteador *varredor = caminho[i]->primeiroRoteador;
-		caminho[i]->tempoRota = 0;
-		while (varredor->proxRtd != NULL){
-			caminho[i]->tempoRota = caminho[i]->tempoRota + varredor->tempoProx;	
-			varredor = varredor->proxRtd;
+	for (i=0 ; i<routeQtd ; i++){
+		router *iterator = way[i]->firstRouter;
+		way[i]->routeTime = 0;
+		while (iterator->nextRtd != NULL){
+			way[i]->routeTime = way[i]->routeTime + iterator->nextTime;	
+			iterator = iterator->nextRtd;
 		}
 	}
 }
@@ -201,158 +201,158 @@ void atualizarTemposTotais (rota *caminho[]){
 
 /* ----------------------------------- GENETIC ALGORITHM -------------------------------------*/ 
 
-void avaliarFitness (rota *caminho[]){ 
+void evaluateFitness (route *way[]){ 
 	int i;
-	for (i=0 ; i<qtdRotas ; i++){
-		roteador *varredor = caminho[i]->primeiroRoteador;
-		caminho[i]->somaFitness = 0;
+	for (i=0 ; i<routeQtd ; i++){
+		router *iterator = way[i]->firstRouter;
+		way[i]->fitnessSum = 0;
 		
-		while (varredor->proxRtd != NULL){
-			varredor->fitness = 1.0 / varredor->tempoProx;
-			varredor = varredor->proxRtd;
+		while (iterator->nextRtd != NULL){
+			iterator->fitness = 1.0 / iterator->nextTime;
+			iterator = iterator->nextRtd;
 		}
-		caminho[i]->somaFitness = 1.0/caminho[i]->tempoRota;
+		way[i]->fitnessSum = 1.0/way[i]->routeTime;
 	}
 	
 }
 
-void fazerElitismo (rota *caminho[]){
-	roteador *varredor = caminho[qtdRotas-2]->primeiroRoteador->proxRtd;			
-	roteador *maisRapido = varredor;
-	float menorTempo = varredor->tempoProx;
+void makeElitism (route *way[]){
+	router *iterator = way[routeQtd-2]->firstRouter->nextRtd;			
+	router *faster = iterator;
+	float smallerTime = iterator->nextTime;
 	
-	while (varredor->proxRtd != NULL){
-		if (menorTempo > varredor->tempoProx){
-			menorTempo = varredor->tempoProx;
-			maisRapido = varredor;
+	while (iterator->nextRtd != NULL){
+		if (smallerTime > iterator->nextTime){
+			smallerTime = iterator->nextTime;
+			faster = iterator;
 		}
-		varredor = varredor->proxRtd;
+		iterator = iterator->nextRtd;
 	}
 	
-	varredor = caminho [qtdRotas-1]->primeiroRoteador->proxRtd;						
-	roteador *maisLento = varredor;
-	float maiorTempo = varredor->tempoProx;
+	iterator = way [routeQtd-1]->firstRouter->nextRtd;						
+	router *slowler = iterator;
+	float greaterTime = iterator->nextTime;
 	
-	while (varredor->proxRtd != NULL){
-		if (maiorTempo < varredor->tempoProx){
-			maiorTempo = varredor->tempoProx;
-			maisLento = varredor;
+	while (iterator->nextRtd != NULL){
+		if (greaterTime < iterator->nextTime){
+			greaterTime = iterator->nextTime;
+			slowler = iterator;
 		}
-		varredor = varredor->proxRtd;
+		iterator = iterator->nextRtd;
 	}
 	
-	strcpy (maisLento->ip, maisRapido->ip);
-	maisLento->tempoProx = maisRapido->tempoProx;
-	strcpy (maisLento->ultimoOcBin, maisRapido->ultimoOcBin);
-	maisLento->fitness = maisRapido->fitness;
+	strcpy (slowler->ip, faster->ip);
+	slowler->nextTime = faster->nextTime;
+	strcpy (slowler->lastBinOc, faster->lastBinOc);
+	slowler->fitness = faster->fitness;
 }
 
-void fazerCrossover (rota *caminho[]){
+void makeCrosover (route *way[]){
 	
-	int tamanhoRotas [qtdRotas], i;
+	int routesSize [routeQtd], i;
 	
-	for (i=0 ; i<qtdRotas ; i++){
-		roteador *aux = caminho[i]->primeiroRoteador;
-		tamanhoRotas[i] = 0;
+	for (i=0 ; i<routeQtd ; i++){
+		router *aux = way[i]->firstRouter;
+		routesSize[i] = 0;
 		while (aux!=NULL){
-			tamanhoRotas[i]++;
-			aux = aux->proxRtd;
+			routesSize[i]++;
+			aux = aux->nextRtd;
 		}
 	}
 	
-	int menorRota = tamanhoRotas[0];			
+	int smallerRoute = routesSize[0];			
 	
-	for (i=0 ; i<qtdRotas ; i++){
-		if (menorRota>tamanhoRotas[i])
-			menorRota = tamanhoRotas[i];
+	for (i=0 ; i<routeQtd ; i++){
+		if (smallerRoute>routesSize[i])
+			smallerRoute = routesSize[i];
 	}
 	
 	srand (time(0));
-	int crossovadas [qtdRotas];				//control flag to know which routes was crossoved
-	int metodo = rand() % 3;
+	int crossoved [routeQtd];				//control flag to know which routes was crossoved
+	int method = rand() % 3;
 	
-	for (i=0 ; i<qtdRotas ; i++)
-		crossovadas [i] = 0;
+	for (i=0 ; i<routeQtd ; i++)
+		crossoved [i] = 0;
 	
-	for (i=0 ; i<qtdRotas ; i++){
-		if (metodo == 1){
-			if (crossovadas[i] == 0){
-				int pontoDeCorte = 1 + (rand() % menorRota);				
-				printf ("SEPARATION POINT %d - %d: %d\n", i+1, i+3, pontoDeCorte);
-				if (menorRota == pontoDeCorte || pontoDeCorte > menorRota)				// \ This way, the separation point never will be greater than the smaller route
-					pontoDeCorte = 1;													// / And if be, the separation point will be after first router
+	for (i=0 ; i<routeQtd ; i++){
+		if (method == 1){
+			if (crossoved[i] == 0){
+				int separationPoint = 1 + (rand() % smallerRoute);				
+				printf ("SEPARATION POINT %d - %d: %d\n", i+1, i+3, separationPoint);
+				if (smallerRoute == separationPoint || separationPoint > smallerRoute)				// \ This way, the separation point never will be greater than the smaller route
+					separationPoint = 1;													// / And if be, the separation point will be after first router
 				
 				/* Crossover in fact */
-				roteador *varredorRota1 = caminho[i]->primeiroRoteador;
-				roteador *varredorRota2 = caminho[i+2]->primeiroRoteador;
+				router *iteratorRoute1 = way[i]->firstRouter;
+				router *iteratorRoute2 = way[i+2]->firstRouter;
 				
 				int j;
-				for (j=0 ; j<pontoDeCorte-1 ; j++){
-					varredorRota1 = varredorRota1->proxRtd;
-					varredorRota2 = varredorRota2->proxRtd;
+				for (j=0 ; j<separationPoint-1 ; j++){
+					iteratorRoute1 = iteratorRoute1->nextRtd;
+					iteratorRoute2 = iteratorRoute2->nextRtd;
 				}
-				roteador *aux = criarRoteador ("0.0.0.0", 0);
+				router *aux = createRouter ("0.0.0.0", 0);
 				
-				aux->proxRtd = varredorRota1->proxRtd;
-				varredorRota1->proxRtd = varredorRota2->proxRtd;
-				varredorRota2->proxRtd = aux->proxRtd;
+				aux->nextRtd = iteratorRoute1->nextRtd;
+				iteratorRoute1->nextRtd = iteratorRoute2->nextRtd;
+				iteratorRoute2->nextRtd = aux->nextRtd;
 				/* Fim do Crossover Efetivo */
-				crossovadas[i] = 1;
-				crossovadas[i+2] = 1;
+				crossoved[i] = 1;
+				crossoved[i+2] = 1;
 			}
 		}
 		
-		if (metodo == 0){
-			if (crossovadas[i] == 0){
-				int pontoDeCorte = 1 + (rand() % menorRota);				
-				printf ("SEPARATION POINT %d - %d: %d\n", i+1, i+2, pontoDeCorte);
-				if (menorRota == pontoDeCorte || pontoDeCorte > menorRota)				// \ This way, the separation point never will be greater than the smaller route
-					pontoDeCorte = 1;													// / And if be, the separation point will be after first router
+		if (method == 0){
+			if (crossoved[i] == 0){
+				int separationPoint = 1 + (rand() % smallerRoute);				
+				printf ("SEPARATION POINT %d - %d: %d\n", i+1, i+2, separationPoint);
+				if (smallerRoute == separationPoint || separationPoint > smallerRoute)				// \ This way, the separation point never will be greater than the smaller route
+					separationPoint = 1;													// / And if be, the separation point will be after first router
 				
 				/* Crossover Efetivo */
-				roteador *varredorRota1 = caminho[i]->primeiroRoteador;
-				roteador *varredorRota2 = caminho[i+1]->primeiroRoteador;
+				router *iteratorRoute1 = way[i]->firstRouter;
+				router *iteratorRoute2 = way[i+1]->firstRouter;
 				
 				int j;
-				for (j=0 ; j<pontoDeCorte-1 ; j++){
-					varredorRota1 = varredorRota1->proxRtd;
-					varredorRota2 = varredorRota2->proxRtd;
+				for (j=0 ; j<separationPoint-1 ; j++){
+					iteratorRoute1 = iteratorRoute1->nextRtd;
+					iteratorRoute2 = iteratorRoute2->nextRtd;
 				}
-				roteador *aux = criarRoteador ("0.0.0.0", 0);
+				router *aux = createRouter ("0.0.0.0", 0);
 				
-				aux->proxRtd = varredorRota1->proxRtd;
-				varredorRota1->proxRtd = varredorRota2->proxRtd;
-				varredorRota2->proxRtd = aux->proxRtd;
+				aux->nextRtd = iteratorRoute1->nextRtd;
+				iteratorRoute1->nextRtd = iteratorRoute2->nextRtd;
+				iteratorRoute2->nextRtd = aux->nextRtd;
 				/* End of Crossover in fact */
-				crossovadas[i] = 1;
-				crossovadas[i+1] = 1;
+				crossoved[i] = 1;
+				crossoved[i+1] = 1;
 			}
 		}
 		
-		if (metodo == 2){
-			if (crossovadas[i] == 0){
-				int pontoDeCorte = 1 + (rand() % menorRota);				
-				printf ("SEPARATION POINT %d - %d: %d\n", i+1, qtdRotas-i, pontoDeCorte);
-				if (menorRota == pontoDeCorte || pontoDeCorte > menorRota)				// \ This way, the separation point never will be greater than the smaller route
-					pontoDeCorte = 1;													// / And if be, the separation point will be after first router
+		if (method == 2){
+			if (crossoved[i] == 0){
+				int separationPoint = 1 + (rand() % smallerRoute);				
+				printf ("SEPARATION POINT %d - %d: %d\n", i+1, routeQtd-i, separationPoint);
+				if (smallerRoute == separationPoint || separationPoint > smallerRoute)				// \ This way, the separation point never will be greater than the smaller route
+					separationPoint = 1;													// / And if be, the separation point will be after first router
 				
 				/* Crossover in fact */
-				roteador *varredorRota1 = caminho[i]->primeiroRoteador;
-				roteador *varredorRota2 = caminho[qtdRotas-i-1]->primeiroRoteador;
+				router *iteratorRoute1 = way[i]->firstRouter;
+				router *iteratorRoute2 = way[routeQtd-i-1]->firstRouter;
 				
 				int j;
-				for (j=0 ; j<pontoDeCorte-1 ; j++){
-					varredorRota1 = varredorRota1->proxRtd;
-					varredorRota2 = varredorRota2->proxRtd;
+				for (j=0 ; j<separationPoint-1 ; j++){
+					iteratorRoute1 = iteratorRoute1->nextRtd;
+					iteratorRoute2 = iteratorRoute2->nextRtd;
 				}
-				roteador *aux = criarRoteador ("0.0.0.0", 0);
+				router *aux = createRouter ("0.0.0.0", 0);
 				
-				aux->proxRtd = varredorRota1->proxRtd;
-				varredorRota1->proxRtd = varredorRota2->proxRtd;
-				varredorRota2->proxRtd = aux->proxRtd;
-				/* Fim do Crossover Efetivo */
-				crossovadas[i] = 1;
-				crossovadas[qtdRotas-i-1] = 1;
+				aux->nextRtd = iteratorRoute1->nextRtd;
+				iteratorRoute1->nextRtd = iteratorRoute2->nextRtd;
+				iteratorRoute2->nextRtd = aux->nextRtd;
+				/* Efective crossover end */
+				crossoved[i] = 1;
+				crossoved[routeQtd-i-1] = 1;
 			}
 		}
 		
@@ -360,42 +360,42 @@ void fazerCrossover (rota *caminho[]){
 	printf ("\n\n");
 }
 
-/* ----------------------------------- ALGORÍTMO GENÉTICO -------------------------------------*/ 
+/* ----------------------------------- GENETIC ALGORITHM -------------------------------------*/ 
 
 
 int main (){
-	int continua=1;
+	int continueExecution=1;
 	
-	/* INICIALIZANDO A POPULAÇÃO DE ROTAS */
-	rota *caminho [qtdRotas];
+	/* INITIALIZING THE ROUTES POPULATION */
+	route *way [routeQtd];
 	
 	int i=0;
-	for (i=0 ; i<qtdRotas ; i++){
-		caminho[i] = inicializa();
+	for (i=0 ; i<routeQtd ; i++){
+		way[i] = initialize();
 	}
-	/* FIM DA INICIALIZAÇÃO */
+	/* INITIALIZATION ENDS */
 	
-	avaliarFitness (caminho);	
-	impressao (caminho);
+	evaluateFitness (way);	
+	show (way);
 	
 	printf ("Do you want to continue route crossover? 1-yes, 0-no ");
-	scanf ("%d", &continua);
+	scanf ("%d", &continueExecution);
 		
-	int contGeracoes = 1;		//inicializando contador de gerações 
+	int contGeracoes = 1;		//initializing generations counter
 	
-	while (continua == 1){
+	while (continueExecution == 1){
 		
 		printf ("Generation %d:\n\n", contGeracoes); 
-		fazerCrossover (caminho);
-		fazerElitismo (caminho);
-		removerRepetidos (caminho);
-		atualizarTemposTotais (caminho);
-		avaliarFitness (caminho);	
-		impressao (caminho);
+		makeCrosover (way);
+		makeElitism (way);
+		removeRepeated (way);
+		updateTotalLatencies (way);
+		evaluateFitness (way);	
+		show (way);
 		contGeracoes++;
 		
 		printf ("Do you want to continue route crossover? 1-yes, 0-no ");
-		scanf ("%d", &continua);
+		scanf ("%d", &continueExecution);
 		printf ("\n\n");
 	}
 	
