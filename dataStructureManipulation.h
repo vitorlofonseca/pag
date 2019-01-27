@@ -151,7 +151,7 @@ void show (route *way[]){
 		router *aux = way[i]->firstRouter;
 	
 		while (aux != NULL){
-			printf ("IP: %s - Time to next router: %dms - Last octet binary: %s - Fitness Jump: %f\n", aux->ip, aux->nextTime, aux->lastBinOc, aux->fitness);
+			printf ("IP: %s - Latency to next router: %dms - Last octet binary: %s - Fitness Jump: %f\n", aux->ip, aux->nextTime, aux->lastBinOc, aux->fitness);
 			aux = aux->nextRtd;
 		}
 		printf ("Total Time: %dms\n", way[i]->routeTime);
