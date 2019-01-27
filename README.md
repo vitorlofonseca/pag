@@ -5,9 +5,10 @@ This project has as objective to decide the best route between a source host and
 1 - Actual Situation
  - The algorithm works with linked list
  - The address of each router is random. 
+ - The crossover will be done between the numbers 1 and 3 | 2 and 4 and the separation point will be 4 and 2
  - The router X transfer times to next routers are random
- - This algorithm is using elitism, instead mutation
  - The elitism is only being used in the last route
+ - The elitism consist in catch the router with the best latency in the penultimate route, and to clone in the last route
  
 2 - Next Goals
  - Develop integration with ICMP protocol, to work with real routes and your latency possibilities

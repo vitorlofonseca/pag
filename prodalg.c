@@ -1,18 +1,17 @@
 /*
- * gap.c
+ * prodalg.c
  * 
  * Copyright 2016 vitor <vitor@DESKTOP-370EE9O>
  * 
- * Este programa é um algoritmo genético aplicado a redes de computadores
- * que tem como objetivo decidir a melhor rota para um pacote percorrer.
- * Abaixo, temos algumas suposições para o programa no mínimo fazer sentido.
+ * This software is an Genetic Algorithm applied to computers network. 
+ * It decide the best route where a network packet should go through. 
+ * Below, we have some suppositions, to the script to make sense.
  * 
- * - Todos os n roteadores tem enlaces com os outros n-1 roteadores.
- * - O crossover será feito entre os números 1 e 3 | 2 e 4 e o ponto de corte será 4 e 2
- * - A quantidade de rotas (população inicial sempre deve ser par
- * - Neste programa, está sendo usado Elitismo em vez de mutação
- * - O ELITISMO SÓ ESTÁ SENDO REALIZADO NA ULTIMA ROTA
- * - O elitismo consiste em pegar o roteador com o melhor tempo da penúltima rota e clonar na última rota
+ * - All of N routers have links with the N-1 other routers
+ * - The crossover will be done between the numbers 1 and 3 | 2 and 4 and the separation point will be 4 and 2
+ * - The routes quantity should be pair
+ * - The elitism is only being used in the last route
+ * - The elitism consist in catch the router with the best latency in the penultimate route, and to clone in the last route
  * 
  */
 
@@ -46,7 +45,7 @@ typedef struct rota{
 	double somaFitness;
 }rota;
 
-/* ---------------------------------- MANIPULAÇÃO DA LISTA ------------------------------------*/
+/* ---------------------------------- LIST MANIPULATION ------------------------------------*/
 
 void removerRepetidos (rota *caminho[]){
 	int i;
@@ -86,12 +85,12 @@ roteador* criarRoteador (char ip [], int ultimoOcInt){
 }
 
 rota* inicializaRota (){
-	rota *caminho = (rota*)malloc(sizeof(rota));			//alocando espaço na memória para a lista encadeada rota
-	roteador *rtd = criarRoteador(hostOrigem, ultimoOcOrigem);				//criando o primeiro roteador com o ip origem
-	caminho->primeiroRoteador = rtd;						//o primeiro roteador do caminho é o roteador criado
-	caminho->tempoRota = 0;									//tempo da rota inicializado
+	rota *caminho = (rota*)malloc(sizeof(rota));			//allocating space in memory to linked list
+	roteador *rtd = criarRoteador(hostOrigem, ultimoOcOrigem);				//creating the first router with the origin-IP
+	caminho->primeiroRoteador = rtd;						
+	caminho->tempoRota = 0;									//route time initialized
 	caminho->somaFitness = 0.0;
-	return caminho;											//retorno do primeiro roteador
+	return caminho;											//first router return
 }
 
 void adicionarRoteador (rota *caminho, char ip [], int ultimoOcInt){
@@ -121,10 +120,10 @@ int detectarRepetidos (rota *caminho, char ip[]){
 
 
 rota* montarRota (){
-	rota *caminho = inicializaRota();						//inicializa a rota					
+	rota *caminho = inicializaRota();						//initialize the route
 	
 	int i=0;
-	/* Essa parte serve para randomizar os roteadores entre o destino e o final */
+	/* Randomize the routers between the source and the destination */
 	for (i=0 ; i<rand() % faixaIP + 3 ; i++){		
 		char ultimoOc[3];					
 		int ultimoOcInt = rand() % faixaIP + 3;				
@@ -133,15 +132,13 @@ rota* montarRota (){
 		strcpy (ip, "192.168.1.");
 		strcat (ip, ultimoOc);
 		
-		if (detectarRepetidos (caminho, ip) == -1){ 					//Se já existir um roteador com o mesmo ip, não insira
+		if (detectarRepetidos (caminho, ip) == -1){ 					//If already exist a router with the same IP, doesn't insert
 			adicionarRoteador (caminho, ip, ultimoOcInt); 
 		}
 			
 	}
-	/* FIM DESSA PARTE */
 	
-	
-	/* Essa parte serve para localizar o ultimo roteador aleatório, e amarrar o destino efetivo no final da rota */
+	/* Localizing the last random router, and linking the efective destination in the end route */
 	roteador *aux = caminho->primeiroRoteador;					
 	
 	while (aux->proxRtd != NULL){ 
@@ -156,12 +153,10 @@ rota* montarRota (){
 		
 	aux = caminho->primeiroRoteador;							 	   //
 																		//
-	while (aux->tempoProx != -1){                                        //	CÁLCULO DO TEMPO TOTAL DA ROTA	
+	while (aux->tempoProx != -1){                                        //	Calc of route total time
 		caminho->tempoRota = caminho->tempoRota + aux->tempoProx; 		  //
 		aux = aux->proxRtd;												//		
 	} 																  // 
-	
-	/* FIM DESSA PARTE */
 	
 	return caminho;
 }
@@ -176,16 +171,16 @@ void impressao (rota *caminho[]){
 	
 	int i=0;
 	for (i=0 ; i<qtdRotas ; i++){
-		printf ("Rota %d\n\n", i+1);
+		printf ("Route %d\n\n", i+1);
 	
 		roteador *aux = caminho[i]->primeiroRoteador;
 	
 		while (aux != NULL){
-			printf ("IP: %s - Tempo para o proximo roteador: %dms - Binario do ultimo Octeto: %s - Fitness Salto: %f\n", aux->ip, aux->tempoProx, aux->ultimoOcBin, aux->fitness);
+			printf ("IP: %s - Time to next router: %dms - Last octet binary: %s - Fitness Jump: %f\n", aux->ip, aux->tempoProx, aux->ultimoOcBin, aux->fitness);
 			aux = aux->proxRtd;
 		}
-		printf ("Tempo Total: %dms\n", caminho[i]->tempoRota);
-		printf ("Fitness da Rota: %f\n", caminho[i]->somaFitness);
+		printf ("Total Time: %dms\n", caminho[i]->tempoRota);
+		printf ("Route Fitness: %f\n", caminho[i]->somaFitness);
 		printf ("\n\n");
 	}
 }
@@ -202,9 +197,9 @@ void atualizarTemposTotais (rota *caminho[]){
 	}
 }
 
-/* ---------------------------------- MANIPULAÇÃO DA LISTA ------------------------------------*/
+/* ---------------------------------- LIST MANIPULATION ------------------------------------*/
 
-/* ----------------------------------- ALGORÍTMO GENÉTICO -------------------------------------*/ 
+/* ----------------------------------- GENETIC ALGORITHM -------------------------------------*/ 
 
 void avaliarFitness (rota *caminho[]){ 
 	int i;
@@ -273,7 +268,7 @@ void fazerCrossover (rota *caminho[]){
 	}
 	
 	srand (time(0));
-	int crossovadas [qtdRotas];				//flag de controle pra saber quais rotas sofreram crossover
+	int crossovadas [qtdRotas];				//control flag to know which routes was crossoved
 	int metodo = rand() % 3;
 	
 	for (i=0 ; i<qtdRotas ; i++)
@@ -283,11 +278,11 @@ void fazerCrossover (rota *caminho[]){
 		if (metodo == 1){
 			if (crossovadas[i] == 0){
 				int pontoDeCorte = 1 + (rand() % menorRota);				
-				printf ("PONTO DE CORTE %d - %d: %d\n", i+1, i+3, pontoDeCorte);
-				if (menorRota == pontoDeCorte || pontoDeCorte > menorRota)				// \ Dessa forma, o ponto de corte nunca vai ser maior do que a menor rota.
-					pontoDeCorte = 1;													// / E se for o ponto de corte vai ser depois do primeiro roteador
+				printf ("SEPARATION POINT %d - %d: %d\n", i+1, i+3, pontoDeCorte);
+				if (menorRota == pontoDeCorte || pontoDeCorte > menorRota)				// \ This way, the separation point never will be greater than the smaller route
+					pontoDeCorte = 1;													// / And if be, the separation point will be after first router
 				
-				/* Crossover Efetivo */
+				/* Crossover in fact */
 				roteador *varredorRota1 = caminho[i]->primeiroRoteador;
 				roteador *varredorRota2 = caminho[i+2]->primeiroRoteador;
 				
@@ -310,9 +305,9 @@ void fazerCrossover (rota *caminho[]){
 		if (metodo == 0){
 			if (crossovadas[i] == 0){
 				int pontoDeCorte = 1 + (rand() % menorRota);				
-				printf ("PONTO DE CORTE %d - %d: %d\n", i+1, i+2, pontoDeCorte);
-				if (menorRota == pontoDeCorte || pontoDeCorte > menorRota)				// \ Dessa forma, o ponto de corte nunca vai ser maior do que a menor rota.
-					pontoDeCorte = 1;													// / E se for o ponto de corte vai ser depois do primeiro roteador
+				printf ("SEPARATION POINT %d - %d: %d\n", i+1, i+2, pontoDeCorte);
+				if (menorRota == pontoDeCorte || pontoDeCorte > menorRota)				// \ This way, the separation point never will be greater than the smaller route
+					pontoDeCorte = 1;													// / And if be, the separation point will be after first router
 				
 				/* Crossover Efetivo */
 				roteador *varredorRota1 = caminho[i]->primeiroRoteador;
@@ -328,7 +323,7 @@ void fazerCrossover (rota *caminho[]){
 				aux->proxRtd = varredorRota1->proxRtd;
 				varredorRota1->proxRtd = varredorRota2->proxRtd;
 				varredorRota2->proxRtd = aux->proxRtd;
-				/* Fim do Crossover Efetivo */
+				/* End of Crossover in fact */
 				crossovadas[i] = 1;
 				crossovadas[i+1] = 1;
 			}
@@ -337,11 +332,11 @@ void fazerCrossover (rota *caminho[]){
 		if (metodo == 2){
 			if (crossovadas[i] == 0){
 				int pontoDeCorte = 1 + (rand() % menorRota);				
-				printf ("PONTO DE CORTE %d - %d: %d\n", i+1, qtdRotas-i, pontoDeCorte);
-				if (menorRota == pontoDeCorte || pontoDeCorte > menorRota)				// \ Dessa forma, o ponto de corte nunca vai ser maior do que a menor rota.
-					pontoDeCorte = 1;													// / E se for o ponto de corte vai ser depois do primeiro roteador
+				printf ("SEPARATION POINT %d - %d: %d\n", i+1, qtdRotas-i, pontoDeCorte);
+				if (menorRota == pontoDeCorte || pontoDeCorte > menorRota)				// \ This way, the separation point never will be greater than the smaller route
+					pontoDeCorte = 1;													// / And if be, the separation point will be after first router
 				
-				/* Crossover Efetivo */
+				/* Crossover in fact */
 				roteador *varredorRota1 = caminho[i]->primeiroRoteador;
 				roteador *varredorRota2 = caminho[qtdRotas-i-1]->primeiroRoteador;
 				
@@ -383,14 +378,14 @@ int main (){
 	avaliarFitness (caminho);	
 	impressao (caminho);
 	
-	printf ("Deseja continuar o crossover de rotas? 1-sim, 0-nao ");
+	printf ("Do you want to continue route crossover? 1-yes, 0-no ");
 	scanf ("%d", &continua);
 		
 	int contGeracoes = 1;		//inicializando contador de gerações 
 	
 	while (continua == 1){
 		
-		printf ("Geracao %d:\n\n", contGeracoes); 
+		printf ("Generation %d:\n\n", contGeracoes); 
 		fazerCrossover (caminho);
 		fazerElitismo (caminho);
 		removerRepetidos (caminho);
@@ -399,7 +394,7 @@ int main (){
 		impressao (caminho);
 		contGeracoes++;
 		
-		printf ("Deseja continuar o crossover de rotas? 1-sim, 0-nao ");
+		printf ("Do you want to continue route crossover? 1-yes, 0-no ");
 		scanf ("%d", &continua);
 		printf ("\n\n");
 	}
